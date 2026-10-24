@@ -7,7 +7,7 @@
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=JetBrains+Mono:wght@600;700&display=swap" rel="stylesheet">
   <style>
     :root {
       --font-main: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
@@ -54,7 +54,7 @@
 
     .live-widget {
       width: 100%;
-      max-width: 860px;
+      max-width: 980px;
       margin: 0 auto;
       background: #ffffff;
       border-radius: 12px;
@@ -248,6 +248,15 @@
       to { transform: rotate(360deg); }
     }
 
+    /* Cột 5: Ngày */
+    .date-text {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      font-weight: 600;
+      color: #64748b;
+      letter-spacing: -0.2px;
+    }
+
     /* Nút điều khiển ẩn gọn ở góc dưới (di chuột vào mới thấy, không làm bẩn khung live) */
     .mini-controls {
       position: fixed;
@@ -280,10 +289,11 @@
     <table>
       <thead>
         <tr>
-          <th style="width: 25%;">MÃ / LINK SỰ KIỆN</th>
-          <th style="width: 38%;">TIẾN ĐỘ KÉO ĐIỂM</th>
-          <th style="width: 19%;">VÉ THỰC NHẬN</th>
-          <th style="width: 18%;">TRẠNG THÁI</th>
+          <th style="width: 22%;">MÃ / LINK SỰ KIỆN</th>
+          <th style="width: 32%;">TIẾN ĐỘ KÉO ĐIỂM</th>
+          <th style="width: 16%;">VÉ THỰC NHẬN</th>
+          <th style="width: 15%;">TRẠNG THÁI</th>
+          <th style="width: 15%;">NGÀY</th>
         </tr>
       </thead>
       <tbody id="orders-tbody">
@@ -292,7 +302,7 @@
     </table>
   </div>
 
-  <!-- Nút tiện ích mờ ở góc để bạn test nhanh hoặc thêm đơn thủ công nếu muốn -->
+  <!-- Nút tiện ích mờ ở góc để test nhanh hoặc thêm đơn thủ công nếu muốn -->
   <div class="mini-controls" title="Rê chuột vào để điều khiển">
     <button class="mini-btn" id="btn-add">+ Thêm đơn ngay</button>
     <button class="mini-btn" id="btn-toggle-speed">Chu kỳ: 45s</button>
@@ -322,6 +332,17 @@
     ];
 
     let orders = [];
+
+    // Định dạng ngày giờ: DD/MM/YYYY HH:mm
+    function formatDateTime(timestamp) {
+      const d = new Date(timestamp);
+      const day = String(d.getDate()).padStart(2, '0');
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const year = d.getFullYear();
+      const hours = String(d.getHours()).padStart(2, '0');
+      const minutes = String(d.getMinutes()).padStart(2, '0');
+      return `${day}/${month}/${year} ${hours}:${minutes}`;
+    }
 
     // Sinh mã ngẫu nhiên 10 ký tự
     function generateUniqueCode() {
@@ -358,6 +379,7 @@
     function initOrders() {
       orders = [];
       usedCodesSet.clear();
+      const now = Date.now();
 
       for (let i = 0; i < 10; i++) {
         const code = initialCodes[i] || generateUniqueCode();
@@ -365,26 +387,29 @@
 
         // Vị trí thứ 3 và 7 cho loại SS 6 lượt để bảng trông thật tự nhiên
         const cfg = (i === 2 || i === 6) ? getRandomConfig("SS") : getRandomConfig("Standard");
+        const orderTime = now - (i * 45000);
 
         if (i === 0) {
           // Đơn đầu tiên đang chạy để live thấy ngay thanh tiến độ nhảy mượt
           orders.push({
-            id: 'ord_' + Date.now() + '_' + i,
+            id: 'ord_' + now + '_' + i,
             code: code,
             cloneDone: 3,
             cloneTotal: cfg.totalClone,
             ticket: cfg.ticket,
-            isFinished: false
+            isFinished: false,
+            createdAt: orderTime
           });
         } else {
           // Các đơn sau đã xong
           orders.push({
-            id: 'ord_' + (Date.now() - (i * 45000)) + '_' + i,
+            id: 'ord_' + orderTime + '_' + i,
             code: code,
             cloneDone: cfg.totalClone,
             cloneTotal: cfg.totalClone,
             ticket: cfg.ticket,
-            isFinished: true
+            isFinished: true,
+            createdAt: orderTime
           });
         }
       }
@@ -455,7 +480,14 @@
           `;
         }
 
-        tr.innerHTML = tdCode + tdProgress + tdTicket + tdStatus;
+        // Cột 5: Ngày
+        const tdDate = `
+          <td>
+            <span class="date-text">${formatDateTime(order.createdAt)}</span>
+          </td>
+        `;
+
+        tr.innerHTML = tdCode + tdProgress + tdTicket + tdStatus + tdDate;
         tbody.appendChild(tr);
       });
     }
@@ -516,7 +548,8 @@
         cloneDone: 0,
         cloneTotal: cfg.totalClone,
         ticket: cfg.ticket,
-        isFinished: false
+        isFinished: false,
+        createdAt: Date.now()
       };
 
       orders.unshift(newOrder);
