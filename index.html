@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bảng Kéo Chung Sức - Live Studio</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --font-main: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+      
+      --color-code: #c26e10;
+      --color-mint: #00d29d;
+      --color-mint-end: #10b981;
+      
+      --badge-ticket-bg: #fff8ee;
+      --badge-ticket-border: #fed9a8;
+      --badge-ticket-text: #c26e10;
+      
+      --badge-done-bg: #eaf9f2;
+      --badge-done-border: #a1e6c8;
+      --badge-done-text: #139968;
+      
+      --badge-running-bg: #eff6ff;
+      --badge-running-border: #bfdbfe;
+      --badge-running-text: #2563eb;
+      
+      --th-color: #64748b;
+      --border-color: #f1f5f9;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    /* Thiết kế vừa khít để đưa lên Live Studio / OBS Browser Source */
+    body {
+      font-family: var(--font-main);
+      background-color: transparent; /* Trong suốt để dễ lồng vào Live Studio */
+      color: #1e293b;
+      margin: 0;
+      padding: 0;
+      -webkit-font-smoothing: antialiased;
+      overflow: hidden;
+      display: inline-block;
+      width: 100%;
+    }
+
+    .live-widget {
+      width: 100%;
+      max-width: 860px;
+      margin: 0 auto;
+      background: #ffffff;
+      border-radius: 12px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+      border: 1px solid #e2e8f0;
+      overflow: hidden;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+
+    thead th {
+      padding: 15px 20px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--th-color);
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      border-bottom: 1px solid #e8edf3;
+      background: #ffffff;
+      white-space: nowrap;
+    }
+
+    tbody td {
+      padding: 16px 20px;
+      vertical-align: middle;
+      border-bottom: 1px solid var(--border-color);
+      white-space: nowrap;
+      transition: background 0.25s ease;
+    }
+
+    tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    /* Hiệu ứng khi có đơn mới xuất hiện */
+    @keyframes rowEnter {
+      0% {
+        opacity: 0;
+        transform: translateY(-16px);
+        background-color: #ecfdf5;
+      }
+      60% {
+        background-color: #ecfdf5;
+      }
+      100% {
+        opacity: 1;
+        transform: translateY(0);
+        background-color: transparent;
+      }
+    }
+
+    .row-new {
+      animation: rowEnter 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    /* Cột 1: Mã sự kiện */
+    .event-code {
+      font-family: var(--font-mono);
+      font-weight: 700;
+      font-size: 15px;
+      color: var(--color-code);
+      letter-spacing: 0.3px;
+    }
+
+    /* Cột 2: Thanh tiến độ */
+    .progress-cell-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .progress-bar-container {
+      width: 130px;
+      height: 9px;
+      background-color: #e2e8f0;
+      border-radius: 9999px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--color-mint) 0%, var(--color-mint-end) 100%);
+      border-radius: 9999px;
+      transition: width 0.75s cubic-bezier(0.34, 1.56, 0.64, 1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Luồng sáng lướt qua thanh tiến trình mượt mà */
+    .progress-bar-fill::after {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; bottom: 0; right: 0;
+      background: linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0) 0%,
+        rgba(255, 255, 255, 0.65) 50%,
+        rgba(255, 255, 255, 0) 100%
+      );
+      transform: translateX(-100%);
+      animation: shimmer 1.8s infinite;
+    }
+
+    @keyframes shimmer {
+      100% {
+        transform: translateX(100%);
+      }
+    }
+
+    .progress-text {
+      font-size: 13.5px;
+      font-weight: 700;
+      color: #0f172a;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .progress-percent {
+      color: #059669;
+      font-weight: 600;
+      transition: all 0.3s ease;
+    }
+
+    .pulse-num {
+      animation: popNum 0.4s ease-out;
+    }
+
+    @keyframes popNum {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.2); color: #059669; }
+      100% { transform: scale(1); }
+    }
+
+    /* Cột 3: Vé thực nhận */
+    .ticket-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 5px 16px;
+      background-color: var(--badge-ticket-bg);
+      border: 1px solid var(--badge-ticket-border);
+      color: var(--badge-ticket-text);
+      font-weight: 700;
+      font-size: 13.5px;
+      border-radius: 7px;
+      letter-spacing: 0.3px;
+    }
+
+    /* Cột 4: Trạng thái */
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 5px 14px;
+      border-radius: 7px;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.2px;
+    }
+
+    .status-badge.done {
+      background-color: var(--badge-done-bg);
+      border: 1px solid var(--badge-done-border);
+      color: var(--badge-done-text);
+    }
+
+    .status-badge.running {
+      background-color: var(--badge-running-bg);
+      border: 1px solid var(--badge-running-border);
+      color: var(--badge-running-text);
+    }
+
+    .spin-icon {
+      display: inline-block;
+      width: 11px;
+      height: 11px;
+      border: 2px solid rgba(37, 99, 235, 0.25);
+      border-radius: 50%;
+      border-top-color: #2563eb;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Nút điều khiển ẩn gọn ở góc dưới (di chuột vào mới thấy, không làm bẩn khung live) */
+    .mini-controls {
+      position: fixed;
+      bottom: 6px;
+      right: 6px;
+      opacity: 0.15;
+      transition: opacity 0.2s ease;
+      display: flex;
+      gap: 6px;
+      z-index: 99;
+    }
+    .mini-controls:hover {
+      opacity: 1;
+    }
+    .mini-btn {
+      background: rgba(15, 23, 42, 0.85);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 4px 8px;
+      font-size: 11px;
+      font-family: var(--font-main);
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="live-widget">
+    <table>
+      <thead>
+        <tr>
+          <th style="width: 25%;">MÃ / LINK SỰ KIỆN</th>
+          <th style="width: 38%;">TIẾN ĐỘ KÉO ĐIỂM</th>
+          <th style="width: 19%;">VÉ THỰC NHẬN</th>
+          <th style="width: 18%;">TRẠNG THÁI</th>
+        </tr>
+      </thead>
+      <tbody id="orders-tbody">
+        <!-- Render danh sách các đơn -->
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Nút tiện ích mờ ở góc để bạn test nhanh hoặc thêm đơn thủ công nếu muốn -->
+  <div class="mini-controls" title="Rê chuột vào để điều khiển">
+    <button class="mini-btn" id="btn-add">+ Thêm đơn ngay</button>
+    <button class="mini-btn" id="btn-toggle-speed">Chu kỳ: 45s</button>
+  </div>
+
+  <script>
+    // --- CẤU HÌNH ---
+    let intervalSeconds = 45;
+    let timerCountdown = intervalSeconds;
+    let isFastMode = false;
+    
+    // Set đảm bảo các mã không bao giờ trùng nhau
+    const usedCodesSet = new Set();
+
+    // 10 mã mẫu ban đầu
+    const initialCodes = [
+      "4mTvER6xR8",
+      "JvLwYs7BS8",
+      "FM5uJuU9P5",
+      "78Hc7KseTJ",
+      "K9wQp3Rt1A",
+      "B8yVz4Nm9C",
+      "3xLaP8Wq5E",
+      "N2mRk7Jy6T",
+      "9vPxL1Sq8W",
+      "P4mYw6Kz3F"
+    ];
+
+    let orders = [];
+
+    // Sinh mã ngẫu nhiên 10 ký tự
+    function generateUniqueCode() {
+      const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+      let code = "";
+      do {
+        code = "";
+        for (let i = 0; i < 10; i++) {
+          code += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+      } while (usedCodesSet.has(code));
+
+      usedCodesSet.add(code);
+      return code;
+    }
+
+    // Chọn cấu hình đơn: Lâu lâu (~25% tỉ lệ) ra loại SS (6 lượt 228 vé), bình thường là 9 lượt 342 vé
+    function getRandomConfig(forceType = null) {
+      if (forceType === "SS" || (forceType === null && Math.random() < 0.25)) {
+        return {
+          type: "SS",
+          totalClone: 6,
+          ticket: 228
+        };
+      }
+      return {
+        type: "Standard",
+        totalClone: 9,
+        ticket: 342
+      };
+    }
+
+    // Khởi tạo 10 đơn ban đầu (1 đơn đang kéo, 9 đơn đã xong; có xen kẽ loại 6 lượt 228 vé)
+    function initOrders() {
+      orders = [];
+      usedCodesSet.clear();
+
+      for (let i = 0; i < 10; i++) {
+        const code = initialCodes[i] || generateUniqueCode();
+        usedCodesSet.add(code);
+
+        // Vị trí thứ 3 và 7 cho loại SS 6 lượt để bảng trông thật tự nhiên
+        const cfg = (i === 2 || i === 6) ? getRandomConfig("SS") : getRandomConfig("Standard");
+
+        if (i === 0) {
+          // Đơn đầu tiên đang chạy để live thấy ngay thanh tiến độ nhảy mượt
+          orders.push({
+            id: 'ord_' + Date.now() + '_' + i,
+            code: code,
+            cloneDone: 3,
+            cloneTotal: cfg.totalClone,
+            ticket: cfg.ticket,
+            isFinished: false
+          });
+        } else {
+          // Các đơn sau đã xong
+          orders.push({
+            id: 'ord_' + (Date.now() - (i * 45000)) + '_' + i,
+            code: code,
+            cloneDone: cfg.totalClone,
+            cloneTotal: cfg.totalClone,
+            ticket: cfg.ticket,
+            isFinished: true
+          });
+        }
+      }
+
+      renderTable(false);
+    }
+
+    // Render bảng
+    function renderTable(hasNewRowAnimation = false) {
+      const tbody = document.getElementById("orders-tbody");
+      tbody.innerHTML = "";
+
+      orders.forEach((order, index) => {
+        const tr = document.createElement("tr");
+        if (hasNewRowAnimation && index === 0) {
+          tr.classList.add("row-new");
+        }
+
+        const percent = Math.round((order.cloneDone / order.cloneTotal) * 100);
+
+        // Cột 1: Mã
+        const tdCode = `
+          <td>
+            <span class="event-code">${order.code}</span>
+          </td>
+        `;
+
+        // Cột 2: Tiến độ kéo điểm mượt mà
+        const tdProgress = `
+          <td>
+            <div class="progress-cell-wrapper">
+              <div class="progress-bar-container">
+                <div class="progress-bar-fill" id="bar-${order.id}" style="width: ${percent}%;"></div>
+              </div>
+              <div class="progress-text">
+                <span id="clones-${order.id}">${order.cloneDone}/${order.cloneTotal} clone</span>
+                <span class="progress-percent" id="pct-${order.id}">(${percent}%)</span>
+              </div>
+            </div>
+          </td>
+        `;
+
+        // Cột 3: Vé thực nhận (+342 vé hoặc +228 vé)
+        const tdTicket = `
+          <td>
+            <span class="ticket-badge">+${order.ticket} vé</span>
+          </td>
+        `;
+
+        // Cột 4: Trạng thái
+        let tdStatus = "";
+        if (order.isFinished) {
+          tdStatus = `
+            <td>
+              <span class="status-badge done">
+                ✓ &nbsp;Đã xong
+              </span>
+            </td>
+          `;
+        } else {
+          tdStatus = `
+            <td>
+              <span class="status-badge running" id="status-${order.id}">
+                <span class="spin-icon"></span>
+                <span>Đang kéo...</span>
+              </span>
+            </td>
+          `;
+        }
+
+        tr.innerHTML = tdCode + tdProgress + tdTicket + tdStatus;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // Cập nhật DOM mượt mà khi tăng điểm (không reload bảng để giữ hiệu ứng animation)
+    function updateOrderDOM(order) {
+      const bar = document.getElementById(`bar-${order.id}`);
+      const clones = document.getElementById(`clones-${order.id}`);
+      const pct = document.getElementById(`pct-${order.id}`);
+      const status = document.getElementById(`status-${order.id}`);
+
+      if (!bar) return;
+
+      const percent = Math.round((order.cloneDone / order.cloneTotal) * 100);
+      bar.style.width = `${percent}%`;
+
+      if (clones) {
+        clones.innerText = `${order.cloneDone}/${order.cloneTotal} clone`;
+        clones.classList.remove("pulse-num");
+        void clones.offsetWidth; // trigger reflow
+        clones.classList.add("pulse-num");
+      }
+
+      if (pct) {
+        pct.innerText = `(${percent}%)`;
+      }
+
+      if (order.isFinished && status) {
+        status.className = "status-badge done";
+        status.innerHTML = "✓ &nbsp;Đã xong";
+      }
+    }
+
+    // Mô phỏng tiến trình nhảy đều đặn
+    function startProgressSimulation() {
+      setInterval(() => {
+        orders.forEach(order => {
+          if (!order.isFinished) {
+            order.cloneDone++;
+            if (order.cloneDone >= order.cloneTotal) {
+              order.cloneDone = order.cloneTotal;
+              order.isFinished = true;
+            }
+            updateOrderDOM(order);
+          }
+        });
+      }, 3800);
+    }
+
+    // Thêm đơn mới
+    function addNewOrder() {
+      const newCode = generateUniqueCode();
+      const cfg = getRandomConfig(); // Tự động ngẫu nhiên loại 9 clone hoặc loại SS 6 clone
+
+      const newOrder = {
+        id: 'ord_' + Date.now(),
+        code: newCode,
+        cloneDone: 0,
+        cloneTotal: cfg.totalClone,
+        ticket: cfg.ticket,
+        isFinished: false
+      };
+
+      orders.unshift(newOrder);
+
+      // Giữ bảng hiển thị tối đa 10 đơn để khung live studio luôn cố định chiều cao, không bị tràn
+      if (orders.length > 10) {
+        orders.pop();
+      }
+
+      renderTable(true);
+
+      // Nhảy clone đầu tiên sau 600ms
+      setTimeout(() => {
+        newOrder.cloneDone = 1;
+        updateOrderDOM(newOrder);
+      }, 600);
+    }
+
+    // Vòng lặp đếm lùi 45s sinh đơn mới
+    function startCountdown() {
+      setInterval(() => {
+        timerCountdown--;
+        if (timerCountdown <= 0) {
+          addNewOrder();
+          timerCountdown = intervalSeconds;
+        }
+      }, 1000);
+    }
+
+    // Nút mini góc dưới để test tiện lợi
+    document.getElementById("btn-add").addEventListener("click", () => {
+      addNewOrder();
+      timerCountdown = intervalSeconds;
+    });
+
+    const speedBtn = document.getElementById("btn-toggle-speed");
+    speedBtn.addEventListener("click", () => {
+      isFastMode = !isFastMode;
+      intervalSeconds = isFastMode ? 6 : 45;
+      timerCountdown = intervalSeconds;
+      speedBtn.innerText = `Chu kỳ: ${intervalSeconds}s`;
+    });
+
+    // Khởi chạy
+    initOrders();
+    startCountdown();
+    startProgressSimulation();
+  </script>
+</body>
+</html>
