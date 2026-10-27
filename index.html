@@ -7,7 +7,7 @@
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=JetBrains+Mono:wght@600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
   <style>
     :root {
       --font-main: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
@@ -28,6 +28,10 @@
       --badge-running-bg: #eff6ff;
       --badge-running-border: #bfdbfe;
       --badge-running-text: #2563eb;
+
+      --badge-user-bg: #f8fafc;
+      --badge-user-border: #cbd5e1;
+      --badge-user-text: #334155;
       
       --th-color: #64748b;
       --border-color: #f1f5f9;
@@ -54,7 +58,7 @@
 
     .live-widget {
       width: 100%;
-      max-width: 980px;
+      max-width: 1080px;
       margin: 0 auto;
       background: #ffffff;
       border-radius: 12px;
@@ -70,7 +74,7 @@
     }
 
     thead th {
-      padding: 15px 20px;
+      padding: 15px 18px;
       font-size: 12px;
       font-weight: 700;
       color: var(--th-color);
@@ -82,7 +86,7 @@
     }
 
     tbody td {
-      padding: 16px 20px;
+      padding: 15px 18px;
       vertical-align: middle;
       border-bottom: 1px solid var(--border-color);
       white-space: nowrap;
@@ -118,20 +122,41 @@
     .event-code {
       font-family: var(--font-mono);
       font-weight: 700;
-      font-size: 15px;
+      font-size: 14.5px;
       color: var(--color-code);
       letter-spacing: 0.3px;
     }
 
-    /* Cột 2: Thanh tiến độ */
+    /* Cột 2: Tên người đặt (có background bo viền) */
+    .user-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 12px;
+      background-color: var(--badge-user-bg);
+      border: 1px solid var(--badge-user-border);
+      border-radius: 8px;
+      color: var(--badge-user-text);
+      font-weight: 600;
+      font-size: 13px;
+      letter-spacing: 0.1px;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+    }
+
+    .user-badge svg {
+      color: #64748b;
+      flex-shrink: 0;
+    }
+
+    /* Cột 3: Thanh tiến độ */
     .progress-cell-wrapper {
       display: flex;
       align-items: center;
-      gap: 14px;
+      gap: 12px;
     }
 
     .progress-bar-container {
-      width: 130px;
+      width: 120px;
       height: 9px;
       background-color: #e2e8f0;
       border-radius: 9999px;
@@ -170,7 +195,7 @@
     }
 
     .progress-text {
-      font-size: 13.5px;
+      font-size: 13px;
       font-weight: 700;
       color: #0f172a;
       display: flex;
@@ -195,29 +220,29 @@
       100% { transform: scale(1); }
     }
 
-    /* Cột 3: Vé thực nhận */
+    /* Cột 4: Vé thực nhận */
     .ticket-badge {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      padding: 5px 16px;
+      padding: 5px 14px;
       background-color: var(--badge-ticket-bg);
       border: 1px solid var(--badge-ticket-border);
       color: var(--badge-ticket-text);
       font-weight: 700;
-      font-size: 13.5px;
+      font-size: 13px;
       border-radius: 7px;
       letter-spacing: 0.3px;
     }
 
-    /* Cột 4: Trạng thái */
+    /* Cột 5: Trạng thái */
     .status-badge {
       display: inline-flex;
       align-items: center;
       gap: 5px;
-      padding: 5px 14px;
+      padding: 5px 12px;
       border-radius: 7px;
-      font-size: 13px;
+      font-size: 12.5px;
       font-weight: 600;
       letter-spacing: 0.2px;
     }
@@ -248,10 +273,10 @@
       to { transform: rotate(360deg); }
     }
 
-    /* Cột 5: Ngày */
+    /* Cột 6: Ngày */
     .date-text {
       font-family: var(--font-mono);
-      font-size: 13px;
+      font-size: 12.5px;
       font-weight: 600;
       color: #64748b;
       letter-spacing: -0.2px;
@@ -289,11 +314,12 @@
     <table>
       <thead>
         <tr>
-          <th style="width: 22%;">MÃ / LINK SỰ KIỆN</th>
-          <th style="width: 32%;">TIẾN ĐỘ KÉO ĐIỂM</th>
-          <th style="width: 16%;">VÉ THỰC NHẬN</th>
-          <th style="width: 15%;">TRẠNG THÁI</th>
-          <th style="width: 15%;">NGÀY</th>
+          <th style="width: 18%;">MÃ / LINK SỰ KIỆN</th>
+          <th style="width: 17%;">NGƯỜI ĐẶT</th>
+          <th style="width: 28%;">TIẾN ĐỘ KÉO ĐIỂM</th>
+          <th style="width: 13%;">VÉ THỰC NHẬN</th>
+          <th style="width: 12%;">TRẠNG THÁI</th>
+          <th style="width: 12%;">NGÀY</th>
         </tr>
       </thead>
       <tbody id="orders-tbody">
@@ -314,8 +340,9 @@
     let timerCountdown = intervalSeconds;
     let isFastMode = false;
     
-    // Set đảm bảo các mã không bao giờ trùng nhau
+    // Set đảm bảo các mã và tên người đặt không bao giờ trùng nhau
     const usedCodesSet = new Set();
+    const usedNamesSet = new Set();
 
     // 10 mã mẫu ban đầu
     const initialCodes = [
@@ -331,6 +358,39 @@
       "P4mYw6Kz3F"
     ];
 
+    // Kho họ và tên thực tế phong phú
+    const familyNames = [
+      "Nguyễn", "Trần", "Lê", "Phạm", "Hoàng", "Huỳnh", "Phan", "Vũ",
+      "Võ", "Đặng", "Bùi", "Đỗ", "Hồ", "Ngô", "Dương", "Lý", "Đinh",
+      "Trịnh", "Lâm", "Đoàn"
+    ];
+
+    const givenNames = [
+      "Tuấn Anh", "Hải Đăng", "Hoàng Long", "Minh Khang", "Quốc Bảo",
+      "Đức Huy", "Thành Đạt", "Tiến Dũng", "Thanh Tùng", "Gia Huy",
+      "Hữu Thắng", "Đình Trọng", "Văn Toàn", "Quang Hải", "Hồng Phúc",
+      "Duy Mạnh", "Bảo Long", "Trung Kiên", "Việt Anh", "Thế Vinh",
+      "Ngọc Mai", "Phương Thảo", "Bảo Trâm", "Thùy Linh", "Thu Hà",
+      "Khánh Vy", "Hồng Nhung", "Bích Phương", "Thảo My", "Hải Yến",
+      "Minh Anh", "Thanh Hằng", "Quỳnh Nga", "Ánh Tuyết", "Diệu Linh",
+      "Tuyết Mai", "Yến Nhi", "Lan Anh", "Mỹ Duyên", "Kim Ngân",
+      "Tấn Phát", "Nhật Minh", "Huy Hoàng", "Bảo Nam", "Khắc Việt"
+    ];
+
+    // 10 tên mẫu ban đầu tự nhiên
+    const initialNames = [
+      "Nguyễn Tuấn Anh",
+      "Trần Hải Đăng",
+      "Lê Phương Thảo",
+      "Phạm Quốc Bảo",
+      "Hoàng Minh Khang",
+      "Vũ Đức Huy",
+      "Đặng Thùy Linh",
+      "Bùi Thành Đạt",
+      "Đỗ Bảo Trâm",
+      "Hồ Gia Huy"
+    ];
+
     let orders = [];
 
     // Định dạng ngày giờ: DD/MM/YYYY HH:mm
@@ -344,7 +404,7 @@
       return `${day}/${month}/${year} ${hours}:${minutes}`;
     }
 
-    // Sinh mã ngẫu nhiên 10 ký tự
+    // Sinh mã ngẫu nhiên 10 ký tự không trùng lặp
     function generateUniqueCode() {
       const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
       let code = "";
@@ -357,6 +417,32 @@
 
       usedCodesSet.add(code);
       return code;
+    }
+
+    // Sinh tên người đặt không bao giờ trùng lặp
+    function generateUniqueName() {
+      let attempts = 0;
+      let name = "";
+
+      while (attempts < 500) {
+        const family = familyNames[Math.floor(Math.random() * familyNames.length)];
+        const given = givenNames[Math.floor(Math.random() * givenNames.length)];
+        name = `${family} ${given}`;
+
+        if (!usedNamesSet.has(name)) {
+          usedNamesSet.add(name);
+          return name;
+        }
+        attempts++;
+      }
+
+      // Trường hợp hiếm khi đã hết tổ hợp thì gắn thêm số đuôi nhẹ
+      const fallbackFamily = familyNames[Math.floor(Math.random() * familyNames.length)];
+      const fallbackGiven = givenNames[Math.floor(Math.random() * givenNames.length)];
+      const uniqueSuffix = Math.floor(10 + Math.random() * 90);
+      name = `${fallbackFamily} ${fallbackGiven} ${uniqueSuffix}`;
+      usedNamesSet.add(name);
+      return name;
     }
 
     // Chọn cấu hình đơn: Lâu lâu (~25% tỉ lệ) ra loại SS (6 lượt 228 vé), bình thường là 9 lượt 342 vé
@@ -379,11 +465,15 @@
     function initOrders() {
       orders = [];
       usedCodesSet.clear();
+      usedNamesSet.clear();
       const now = Date.now();
 
       for (let i = 0; i < 10; i++) {
         const code = initialCodes[i] || generateUniqueCode();
         usedCodesSet.add(code);
+
+        const userName = initialNames[i] || generateUniqueName();
+        usedNamesSet.add(userName);
 
         // Vị trí thứ 3 và 7 cho loại SS 6 lượt để bảng trông thật tự nhiên
         const cfg = (i === 2 || i === 6) ? getRandomConfig("SS") : getRandomConfig("Standard");
@@ -394,6 +484,7 @@
           orders.push({
             id: 'ord_' + now + '_' + i,
             code: code,
+            userName: userName,
             cloneDone: 3,
             cloneTotal: cfg.totalClone,
             ticket: cfg.ticket,
@@ -405,6 +496,7 @@
           orders.push({
             id: 'ord_' + orderTime + '_' + i,
             code: code,
+            userName: userName,
             cloneDone: cfg.totalClone,
             cloneTotal: cfg.totalClone,
             ticket: cfg.ticket,
@@ -430,14 +522,27 @@
 
         const percent = Math.round((order.cloneDone / order.cloneTotal) * 100);
 
-        // Cột 1: Mã
+        // Cột 1: Mã sự kiện
         const tdCode = `
           <td>
             <span class="event-code">${order.code}</span>
           </td>
         `;
 
-        // Cột 2: Tiến độ kéo điểm mượt mà
+        // Cột 2: Tên người đặt (có background bo viền)
+        const tdUser = `
+          <td>
+            <span class="user-badge">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+              </svg>
+              <span>${order.userName}</span>
+            </span>
+          </td>
+        `;
+
+        // Cột 3: Tiến độ kéo điểm mượt mà
         const tdProgress = `
           <td>
             <div class="progress-cell-wrapper">
@@ -452,14 +557,14 @@
           </td>
         `;
 
-        // Cột 3: Vé thực nhận (+342 vé hoặc +228 vé)
+        // Cột 4: Vé thực nhận (+342 vé hoặc +228 vé)
         const tdTicket = `
           <td>
             <span class="ticket-badge">+${order.ticket} vé</span>
           </td>
         `;
 
-        // Cột 4: Trạng thái
+        // Cột 5: Trạng thái
         let tdStatus = "";
         if (order.isFinished) {
           tdStatus = `
@@ -480,14 +585,14 @@
           `;
         }
 
-        // Cột 5: Ngày
+        // Cột 6: Ngày
         const tdDate = `
           <td>
             <span class="date-text">${formatDateTime(order.createdAt)}</span>
           </td>
         `;
 
-        tr.innerHTML = tdCode + tdProgress + tdTicket + tdStatus + tdDate;
+        tr.innerHTML = tdCode + tdUser + tdProgress + tdTicket + tdStatus + tdDate;
         tbody.appendChild(tr);
       });
     }
@@ -540,11 +645,13 @@
     // Thêm đơn mới
     function addNewOrder() {
       const newCode = generateUniqueCode();
+      const newName = generateUniqueName();
       const cfg = getRandomConfig(); // Tự động ngẫu nhiên loại 9 clone hoặc loại SS 6 clone
 
       const newOrder = {
         id: 'ord_' + Date.now(),
         code: newCode,
+        userName: newName,
         cloneDone: 0,
         cloneTotal: cfg.totalClone,
         ticket: cfg.ticket,
